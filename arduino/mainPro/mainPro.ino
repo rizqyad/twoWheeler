@@ -15,10 +15,10 @@
 #define IN4 6
 #define PWM2 5 // motor 2 speed control
 //IMU sensor
+#include "Wire.h"
 #include "I2Cdev.h"
 #include "MPU6050.h"
-#include "HMC5883L_Simple.h"
-
+#include <HMC5883L_Simple.h>
 
 MPU6050 accelgyro;
 HMC5883L_Simple Compass;
@@ -53,7 +53,7 @@ void setup() {
   Serial.println("Initializing I2C devices...");
   // initialize mpu6050
   accelgyro.initialize();
-  Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+  Serial.println(accelgyro.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
   accelgyro.setI2CBypassEnabled(true); // set bypass mode for gateway to hmc5883L
   // initialize hmc5883l
   Compass.SetDeclination(23, 35, 'E');
