@@ -14,7 +14,19 @@
 #define IN3 7
 #define IN4 6
 #define PWM2 5 // motor 2 speed control
+//IMU sensor
+#include "I2Cdev.h"
+#include "MPU6050.h"
+#include "HMC5883L_Simple.h"
 
+
+MPU6050 accelgyro;
+HMC5883L_Simple Compass;
+// accelero and gyro
+int16_t ax, ay, az;
+int16_t gx, gy, gz;
+
+// motor position
 volatile int posi1 = 0; // specify posi as volatile: https://www.arduino.cc/reference/en/language/variables/variable-scope-qualifiers/volatile/
 volatile int posi2 = 0;
 long prevT = 0;
@@ -35,6 +47,21 @@ float ki = 0.0;
 
 void setup() {
   Serial.begin(9600);
+  // connection with IMU:
+  Wire.begin();
+  // initialize devices
+  Serial.println("Initializing I2C devices...");
+  // initialize mpu6050
+  accelgyro.initialize();
+  Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+  accelgyro.setI2CBypassEnabled(true); // set bypass mode for gateway to hmc5883L
+  // initialize hmc5883l
+  Compass.SetDeclination(23, 35, 'E');
+  Compass.SetSamplingMode(COMPASS_SINGLE);
+  Compass.SetScale(COMPASS_SCALE_130);
+  Compass.SetOrientation(COMPASS_HORIZONTAL_X_NORTH);
+  
+  // connection Motor:
   pinMode(ENC1A, INPUT);
   pinMode(ENC1B, INPUT);
   pinMode(ENC2A, INPUT);
@@ -52,7 +79,21 @@ void setup() {
 }
 
 void loop() {
-
+  // read raw accel/gyro measurements from device
+  accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+  // display tab-separated accel/gyro x/y/z values
+  Serial.print("a/g:\t");
+  Serial.print(ax); Serial.print("\t");
+  Serial.print(ay); Serial.print("\t");
+  Serial.print(az); Serial.print("\t");
+  Serial.print(gx); Serial.print("\t");
+  Serial.print(gy); Serial.print("\t");
+  Serial.println(gz);
+  // get heading
+  float heading = Compass.GetHeadingDegrees();
+  Serial.print("Heading: \t");
+  Serial.println( heading );
+  
   // set target position
   //int target = 1200;
   int target = 90 * sin(prevT / 1e6);
