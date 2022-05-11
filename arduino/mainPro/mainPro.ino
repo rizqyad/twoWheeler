@@ -5,14 +5,15 @@
 // encoder 2 input
 #define ENC2A 1 // YELLOW
 #define ENC2B 3 // WHITE
+// motor control
+#define PWM1 10 // motor 1 speed control
 // motor 1 rotation direction control
-#define IN1 4
-#define IN2 5
-#define PWM1 9 // motor 1 speed control
+#define IN1 9
+#define IN2 8
 // motor 2 rotation direction control
-#define IN3 6
-#define IN4 7
-#define PWM2 10 // motor 2 speed control
+#define IN3 7
+#define IN4 6
+#define PWM2 5 // motor 2 speed control
 
 volatile int posi1 = 0; // specify posi as volatile: https://www.arduino.cc/reference/en/language/variables/variable-scope-qualifiers/volatile/
 volatile int posi2 = 0;
@@ -25,6 +26,12 @@ struct typePIDM {
 };
 typePIDM err1;
 typePIDM err2;
+
+// Motor PID constants
+float kp = 1;
+float kd = 0.025;
+float ki = 0.0;
+
 
 void setup() {
   Serial.begin(9600);
@@ -49,11 +56,6 @@ void loop() {
   // set target position
   //int target = 1200;
   int target = 90 * sin(prevT / 1e6);
-
-  // PID constants
-  float kp = 1;
-  float kd = 0.025;
-  float ki = 0.0;
 
   // time difference
   long currT = micros();
@@ -109,10 +111,10 @@ typePIDM pidMotor(int pos, int target, float eprev, float eintegral, float delta
   if (u < 0) {
     err.dir = -1;
   }
-  
+
   // store previous error
   err.eprev = e;
-  
+
   return err;
 }
 void setMotor(int dir, int pwmVal, int pwm, int in1, int in2) {
