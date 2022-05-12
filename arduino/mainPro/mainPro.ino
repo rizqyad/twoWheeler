@@ -53,7 +53,7 @@ void setup() {
   Serial.println("Initializing I2C devices...");
   // initialize mpu6050
   accelgyro.initialize();
-  Serial.println(accelgyro.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
+  Serial.println((accelgyro.gedDeviceID() == 0x34) ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
   accelgyro.setI2CBypassEnabled(true); // set bypass mode for gateway to hmc5883L
   // initialize hmc5883l
   Compass.SetDeclination(23, 35, 'E');
@@ -93,7 +93,7 @@ void loop() {
   float heading = Compass.GetHeadingDegrees();
   Serial.print("Heading: \t");
   Serial.println( heading );
-  
+  delay(500);
   // set target position
   //int target = 1200;
   int target = 90 * sin(prevT / 1e6);
