@@ -26,6 +26,10 @@ HMC5883L_Simple Compass;
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
 
+// set point
+float sp_bottom = -0.1
+float sp_top = 0.1
+
 // motor position
 volatile int posi1 = 0; // specify posi as volatile: https://www.arduino.cc/reference/en/language/variables/variable-scope-qualifiers/volatile/
 volatile int posi2 = 0;
@@ -85,10 +89,10 @@ void loop() {
   Serial.print("Heading: \t");
   Serial.println( heading );
 
-  if(ax > 0.1){
+  if(ax > sp_top){
     setMotor(1, 220, PWM1, IN1, IN2);
     setMotor(1, 220, PWM2, IN3, IN4);
-  }else if(ax < -0.1){
+  }else if(ax < sp_bottom){
     setMotor(-1, 220, PWM1, IN1, IN2);
     setMotor(-1, 220, PWM2, IN3, IN4);
   }
