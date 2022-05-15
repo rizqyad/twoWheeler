@@ -25,10 +25,10 @@ HMC5883L_Simple Compass;
 // accelero and gyro
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
-
+int16_t motor_speed;
 // set point
-float sp_bottom = -0.1
-float sp_top = 0.1
+float sp_bottom = -0.1;
+float sp_top = 0.1;
 
 // motor position
 volatile int posi1 = 0; // specify posi as volatile: https://www.arduino.cc/reference/en/language/variables/variable-scope-qualifiers/volatile/
@@ -77,24 +77,34 @@ void loop() {
   // read raw accel/gyro measurements from device
   accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
   // display tab-separated accel/gyro x/y/z values
-  Serial.print("a/g:\t");
-  Serial.print(ax); Serial.print("\t");
-  Serial.print(ay); Serial.print("\t");
-  Serial.print(az); Serial.print("\t");
-  Serial.print(gx); Serial.print("\t");
-  Serial.print(gy); Serial.print("\t");
-  Serial.println(gz);
-  // get heading
+//  Serial.print("a/g:\t");
+//  Serial.print(ax); Serial.print("\t");
+//  Serial.print(ay); Serial.print("\t");
+//  Serial.print(az); Serial.print("\t");
+//  Serial.print(gx); Serial.print("\t");
+//  Serial.print(gy); Serial.print("\t");
+//  Serial.println(gz);
+//  // get heading
   float heading = Compass.GetHeadingDegrees();
-  Serial.print("Heading: \t");
-  Serial.println( heading );
+//  Serial.print("Heading: \t");
+//  Serial.println( heading );
 
-  if(ax > sp_top){
-    setMotor(1, 220, PWM1, IN1, IN2);
-    setMotor(1, 220, PWM2, IN3, IN4);
-  }else if(ax < sp_bottom){
-    setMotor(-1, 220, PWM1, IN1, IN2);
-    setMotor(-1, 220, PWM2, IN3, IN4);
+  // Accelerometers sensitivity:
+  // -/+2g = 16384  LSB/g
+  float xGf = (float)ax / (float)16384;
+  float yGf = (float)ay / (float)16384;
+  float zGf = (float)az / (float)16384;
+  
+  motor_speed = 95;
+  if(xGf > sp_top){
+    setMotor(1, motor_speed, PWM1, IN1, IN2);
+    setMotor(1, motor_speed, PWM2, IN3, IN4);
+  }else if(xGf < sp_bottom){
+    setMotor(-1, motor_speed, PWM1, IN1, IN2);
+    setMotor(-1, motor_speed, PWM2, IN3, IN4);
+  }else{
+    setMotor(-1, 0, PWM1, IN1, IN2);
+    setMotor(-1, 0, PWM2, IN3, IN4);
   }
   
   // signal the motor
