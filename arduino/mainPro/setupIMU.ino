@@ -13,3 +13,7 @@ void setupHMC(){
   Compass.SetScale(COMPASS_SCALE_130);
   Compass.SetOrientation(COMPASS_HORIZONTAL_X_NORTH);
 }
+
+double calc_pitch(float xGf, float yGf, float zGf){
+  return atan(-xGf / sqrt(yGf * yGf + zGf * zGf)) * RAD_TO_DEG;
+}

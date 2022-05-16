@@ -1,4 +1,10 @@
-#include <util/atomic.h> // For the ATOMIC_BLOCK macro
+//IMU sensor
+#include "Wire.h"
+#include "I2Cdev.h"
+#include "MPU6050.h"
+#include <HMC5883L_Simple.h>
+#include <Kalman.h>  // Source: https://github.com/TKJElectronics/KalmanFilter
+
 // encoder 1 input
 #define ENC1A 0 // YELLOW
 #define ENC1B 2 // WHITE
@@ -14,21 +20,27 @@
 #define IN3 7
 #define IN4 6
 #define PWM2 5 // motor 2 speed control
-//IMU sensor
-#include "Wire.h"
-#include "I2Cdev.h"
-#include "MPU6050.h"
-#include <HMC5883L_Simple.h>
+
+#define RESTRICT_PITCH // Comment out to restrict roll to ±90deg instead
 
 MPU6050 accelgyro;
 HMC5883L_Simple Compass;
+Kalman kalmanY;
+
 // accelero and gyro
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
+
+int16_t tempRaw;
+uint32_t timer;
+
+double kalAngleY; // Calculated angle using a Kalman filter
+
+// motor var
 int16_t motor_speed;
 // set point
-float sp_bottom = -0.1;
-float sp_top = 0.1;
+float sp_bottom = -1.0;
+float sp_top = 1.0;
 
 // motor position
 volatile int posi1 = 0; // specify posi as volatile: https://www.arduino.cc/reference/en/language/variables/variable-scope-qualifiers/volatile/
@@ -55,14 +67,25 @@ void setup() {
   Wire.begin();
   setupMPU();
   setupHMC();
+
+  delay(500);
+  accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+  // Accelerometers sensitivity:
+  // -/+2g = 16384  LSB/g
+  float xGf = (float)ax / (float)16384;
+  float yGf = (float)ay / (float)16384;
+  float zGf = (float)az / (float)16384;
+  double pitch = calc_pitch(xGf, yGf, zGf);
+
+  kalmanY.setAngle(pitch); // Set starting angle
   
-  // connection Motor:
+  timer = micros();
+  
+  // Motor connection:
   pinMode(ENC1A, INPUT);
   pinMode(ENC1B, INPUT);
   pinMode(ENC2A, INPUT);
   pinMode(ENC2B, INPUT);
-
-  
   pinMode(PWM1, OUTPUT);
   pinMode(PWM2, OUTPUT);
   pinMode(IN1, OUTPUT);
@@ -94,12 +117,25 @@ void loop() {
   float xGf = (float)ax / (float)16384;
   float yGf = (float)ay / (float)16384;
   float zGf = (float)az / (float)16384;
+  //Convert Gyro rate 
+  double gyroXrate = gx / 131.0; // Convert to deg/s
+  double gyroYrate = gy / 131.0; // Convert to deg/s
+
+
+  double dt = (double)(micros() - timer) / 1000000; // Calculate delta time
+  timer = micros();
+  
+  // Calculate Pitch from accelerometer (deg)
+  double pitch = calc_pitch(xGf, yGf, zGf);
+  
+  kalAngleY = kalmanY.getAngle(pitch, gyroYrate, dt); // Set angle
+  Serial.println(kalAngleY);
   
   motor_speed = 95;
-  if(xGf > sp_top){
+  if(pitch > sp_top){
     setMotor(1, motor_speed, PWM1, IN1, IN2);
     setMotor(1, motor_speed, PWM2, IN3, IN4);
-  }else if(xGf < sp_bottom){
+  }else if(pitch < sp_bottom){
     setMotor(-1, motor_speed, PWM1, IN1, IN2);
     setMotor(-1, motor_speed, PWM2, IN3, IN4);
   }else{
