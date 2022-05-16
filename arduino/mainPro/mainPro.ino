@@ -53,10 +53,9 @@ struct typePIDM {
   int dir = 1;
 };
 typePIDM err1;
-typePIDM err2;
 
 // Motor PID constants
-float kp = 1;
+float kp = 8;
 float kd = 0.025;
 float ki = 0.0;
 
@@ -68,7 +67,7 @@ void setup() {
   setupMPU();
   setupHMC();
 
-  delay(500);
+  delay(1500);
   accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
   // Accelerometers sensitivity:
   // -/+2g = 16384  LSB/g
@@ -78,7 +77,7 @@ void setup() {
   double pitch = calc_pitch(xGf, yGf, zGf);
 
   kalmanY.setAngle(pitch); // Set starting angle
-  
+  delay(1500);
   timer = micros();
   
   // Motor connection:
@@ -97,6 +96,9 @@ void setup() {
 }
 
 void loop() {
+  // set pitch target
+  int16_t target = 0;
+  
   // read raw accel/gyro measurements from device
   accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
   // display tab-separated accel/gyro x/y/z values
@@ -121,7 +123,7 @@ void loop() {
   double gyroXrate = gx / 131.0; // Convert to deg/s
   double gyroYrate = gy / 131.0; // Convert to deg/s
 
-
+  // time difference
   double dt = (double)(micros() - timer) / 1000000; // Calculate delta time
   timer = micros();
   
@@ -129,38 +131,34 @@ void loop() {
   double pitch = calc_pitch(xGf, yGf, zGf);
   
   kalAngleY = kalmanY.getAngle(pitch, gyroYrate, dt); // Set angle
-  Serial.println(kalAngleY);
-  
-  motor_speed = 95;
-  if(pitch > sp_top){
-    setMotor(1, motor_speed, PWM1, IN1, IN2);
-    setMotor(1, motor_speed, PWM2, IN3, IN4);
-  }else if(pitch < sp_bottom){
-    setMotor(-1, motor_speed, PWM1, IN1, IN2);
-    setMotor(-1, motor_speed, PWM2, IN3, IN4);
-  }else{
-    setMotor(-1, 0, PWM1, IN1, IN2);
-    setMotor(-1, 0, PWM2, IN3, IN4);
-  }
+  Serial.print(kalAngleY);
+  Serial.print("\t");
+
+  // motor control
+  err1 = pidMotor(kalAngleY, target, err1.eprev, err1.eintegral, dt, kp, kd, ki);
+  // signal the motor
+  setMotor(err1.dir, err1.pwr, PWM1, IN1, IN2);
+  setMotor(err1.dir, err1.pwr, PWM2, IN3, IN4);
+  Serial.print(err1.dir);
+  Serial.print("\t");
+  Serial.print(err1.pwr);
+  Serial.println("");
+
+
+//  motor_speed = 95;
+//  if(pitch > sp_top){
+//    setMotor(1, motor_speed, PWM1, IN1, IN2);
+//    setMotor(1, motor_speed, PWM2, IN3, IN4);
+//  }else if(pitch < sp_bottom){
+//    setMotor(-1, motor_speed, PWM1, IN1, IN2);
+//    setMotor(-1, motor_speed, PWM2, IN3, IN4);
+//  }else{
+//    setMotor(-1, 0, PWM1, IN1, IN2);
+//    setMotor(-1, 0, PWM2, IN3, IN4);
+//  }
   
   // signal the motor
 //  setMotor(err1.dir, err1.pwr, PWM1, IN1, IN2);
 //  setMotor(err2.dir, err2.pwr, PWM2, IN3, IN4);
 
-}
-
-void setMotor(int dir, int pwmVal, int pwm, int in1, int in2) {
-  analogWrite(pwm, pwmVal);
-  if (dir == 1) {
-    digitalWrite(in1, HIGH);
-    digitalWrite(in2, LOW);
-  }
-  else if (dir == -1) {
-    digitalWrite(in1, LOW);
-    digitalWrite(in2, HIGH);
-  }
-  else {
-    digitalWrite(in1, LOW);
-    digitalWrite(in2, LOW);
-  }
 }
