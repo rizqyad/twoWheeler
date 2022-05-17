@@ -56,7 +56,7 @@ typePIDM err1;
 
 // Motor PID constants
 float kp = 8;
-float kd = 0.025;
+float kd = 0.050;
 float ki = 0.0;
 
 
