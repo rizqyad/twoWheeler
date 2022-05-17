@@ -16,7 +16,7 @@ typePIDM pidMotor(int pos, int target, float eprev, float eintegral, float delta
   if ( err.pwr > 255 ) {
     err.pwr = 255;
   }
-  err.pwr = map(err.pwr,0, 255, 30, 250);
+  err.pwr = map(err.pwr,0, 255, 30, 180);
   // motor direction
   err.dir = 1;
   if (u < 0) {
