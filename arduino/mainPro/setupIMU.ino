@@ -4,6 +4,14 @@ void setupMPU(){
   // initialize mpu6050
   accelgyro.initialize();
   Serial.println((accelgyro.getDeviceID() == 0x34) ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
+  // set MPU6050 offsets
+  accelgyro.setXAccelOffset(ax_offset);
+  accelgyro.setYAccelOffset(ay_offset);
+  accelgyro.setZAccelOffset(az_offset);
+  accelgyro.setXGyroOffset(gx_offset);
+  accelgyro.setYGyroOffset(gy_offset);
+  accelgyro.setZGyroOffset(gz_offset);
+  
 }
 void setupHMC(){
   accelgyro.setI2CBypassEnabled(true); // set bypass mode for gateway to hmc5883L

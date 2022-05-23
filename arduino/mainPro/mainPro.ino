@@ -21,15 +21,18 @@
 #define IN4 6
 #define PWM2 5 // motor 2 speed control
 
-#define RESTRICT_PITCH // Comment out to restrict roll to ±90deg instead
+#define DEBUG // Comment out to print debug 
 
 MPU6050 accelgyro;
 HMC5883L_Simple Compass;
 Kalman kalmanY;
 
-// accelero and gyro
-int16_t ax, ay, az;
-int16_t gx, gy, gz;
+// MPU6050 data
+int16_t ax, ay, az; // accelerometer
+int16_t gx, gy, gz; //gyro
+// MPU6050 offsets
+int16_t ax_offset = 1121; int16_t ay_offset = -1342; int16_t az_offset = 1263;
+int16_t gx_offset = -6499; int16_t gy_offset = -19965; int16_t gz_offset = 5044;;
 
 int16_t tempRaw;
 uint32_t timer;
@@ -43,8 +46,8 @@ float sp_bottom = -1.0;
 float sp_top = 1.0;
 
 // motor position
-volatile int posi1 = 0; // specify posi as volatile: https://www.arduino.cc/reference/en/language/variables/variable-scope-qualifiers/volatile/
-volatile int posi2 = 0;
+//volatile int posi1 = 0; // specify posi as volatile: https://www.arduino.cc/reference/en/language/variables/variable-scope-qualifiers/volatile/
+//volatile int posi2 = 0;
 long prevT = 0;
 struct typePIDM {
   float eprev = 0;
@@ -67,7 +70,7 @@ void setup() {
   setupMPU();
   setupHMC();
 
-  delay(1500);
+  delay(1000);
   accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
   // Accelerometers sensitivity:
   // -/+2g = 16384  LSB/g
